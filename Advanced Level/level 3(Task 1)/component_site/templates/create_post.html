@@ -1,0 +1,31 @@
+{% load static %}
+{% load ckeditor %}
+
+<div id="createPostModal" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <h2>Create New Blog Post</h2>
+    <form id="createPostForm" method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="id_title">Title:</label>
+        <input type="text" id="id_title" name="title" required>
+      </div>
+      <div class="form-group">
+        <label for="id_content">Content:</label>
+        <textarea name="content" id="id_content"></textarea>
+      </div>
+      <div class="form-group">
+        <label for="id_images">Images (up to 5, you can select multiple):</label>
+        <input type="file" id="id_images" name="images" accept="image/*" multiple>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  CKEDITOR.replace('id_content');
+</script>

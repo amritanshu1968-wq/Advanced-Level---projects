@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../src/main.js"],
+  "sourcesContent": ["// Small deferred script\r\ndocument.addEventListener('DOMContentLoaded', ()=>{\r\n  console.log('Main JS loaded');\r\n});\r\n"],
+  "mappings": "MACA,SAAS,iBAAiB,mBAAoB,IAAI,CAChD,QAAQ,IAAI,gBAAgB,CAC9B,CAAC",
+  "names": []
+}

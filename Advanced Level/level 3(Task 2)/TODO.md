@@ -1,0 +1,5 @@
+- [x] Update src/manifest.json: Add 512x512 icon for PWA installability
+- [x] Update src/sw.js: Add images to cache and improve fetch handler for offline support
+- [x] Update src/main.js: Remove duplicate service worker registration
+- [x] Update src/index.html: Add meta description for SEO
+- [x] Run Lighthouse to verify improvements

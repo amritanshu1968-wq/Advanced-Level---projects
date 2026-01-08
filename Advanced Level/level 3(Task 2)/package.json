@@ -1,0 +1,28 @@
+{
+  "name": "perf-optimizer-sample",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "npx live-server src --port=8080 --open=index.html",
+    "build:js": "esbuild src/main.js --bundle --minify --sourcemap --outfile=dist/main.js",
+    "build:css": "esbuild src/styles.css --bundle --minify --outfile=dist/styles.css",
+    "copy:html": "cpy src/index.html dist --flat",
+    "copy:assets": "cpy src/assets/** dist/assets --flat",
+    "copy:sw": "cpy src/sw.js dist --flat",
+    "copy:manifest": "cpy src/manifest.json dist --flat",
+    "build": "if exist dist rd /s /q dist & mkdir dist & npm run build:js & npm run build:css & npm run copy:html & npm run copy:assets & npm run copy:sw & npm run copy:manifest",
+    "serve": "npx http-server dist -p 8080",
+    "optimize-images": "node scripts/convert-images.js",
+    "lighthouse": "node scripts/run-lighthouse.js",
+    "prepare": "npm run optimize-images && npm run build"
+  },
+  "devDependencies": {
+    "esbuild": "^0.18.0",
+    "http-server": "^14.1.1",
+    "live-server": "^1.2.2",
+    "cpy-cli": "^4.1.0",
+    "lighthouse": "^10.0.0",
+    "chrome-launcher": "^0.15.0",
+    "sharp": "^0.33.0"
+  }
+}

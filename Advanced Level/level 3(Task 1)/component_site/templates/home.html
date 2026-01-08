@@ -1,0 +1,187 @@
+
+{% extends 'base.html' %}
+{% block content %}
+<h1>Welcome {{request.user.username}}</h1>
+<a href="/logout/">Logout</a>
+<button id="openCreateBtn" class="create-btn">Create Post</button>
+
+<!-- Create Post Modal -->
+<div id="createPostModal" class="modal" aria-hidden="true">
+    <div class="modal-content" id="editorBox">
+        <div class="editor-toolbar">
+            <label for="postType">Type:</label>
+            <select id="postType" name="post_type">
+                <option value="standard">Standard</option>
+                <option value="tutorial">Tutorial</option>
+                <option value="announcement">Announcement</option>
+            </select>
+            <label for="editorWidth">Width:</label>
+            <input id="editorWidth" type="number" min="300" value="600">px
+            <label for="editorHeight">Height:</label>
+            <input id="editorHeight" type="number" min="200" value="300">px
+        </div>
+
+        <button class="modal-close" id="closeCreate">×</button>
+        <h2>Create New Blog Post</h2>
+
+        <form id="createPostForm" method="post" action="{% url 'create_post' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="id_title">Title:</label>
+                <input type="text" id="id_title" name="title" required>
+            </div>
+
+            <div class="form-group editor-area">
+                <label for="id_content">Content:</label>
+                <textarea name="content" id="id_content"></textarea>
+            </div>
+
+            <input type="hidden" name="post_type" id="hiddenPostType" value="standard">
+
+            <!-- bottom-right image add -->
+            <div class="image-bottom-right">
+                    <label for="id_images" class="image-add-btn">Add Images</label>
+                    <input type="file" id="id_images" name="images" accept="image/*" multiple style="display:none;" />
+            </div>
+            <div id="imagePreview" class="image-preview" aria-live="polite"></div>
+
+            <!-- bottom-center save -->
+            <div class="form-actions bottom-center">
+                <button type="submit" class="btn btn-primary">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="posts-container">
+    {% if posts %}
+        {% for post in posts %}
+        <div class="post-card">
+            <h2><a href="{% url 'post_detail' post.pk %}">{{ post.title }}</a></h2>
+            <p class="post-meta">By {{ post.author.username }} on {{ post.created_at|date:"M d, Y" }}</p>
+            <p>{{ post.content|truncatewords:30 }}</p>
+            <a href="{% url 'post_detail' post.pk %}">Read more</a>
+            {% if post.author == request.user %}
+            <a href="{% url 'edit_post' post.pk %}" class="edit-link">Edit</a>
+            {% endif %}
+        </div>
+        {% endfor %}
+    {% else %}
+        <p>No posts yet. <a href="{% url 'create_post' %}">Create one</a>!</p>
+    {% endif %}
+</div>
+<!-- Scripts for modal/editor -->
+<script src="https://cdn.ckeditor.com/4.20.2/standard/ckeditor.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    const openBtn = document.getElementById('openCreateBtn');
+    const modal = document.getElementById('createPostModal');
+    const closeBtn = document.getElementById('closeCreate');
+    const postType = document.getElementById('postType');
+    const hiddenType = document.getElementById('hiddenPostType');
+    const editorBox = document.getElementById('editorBox');
+    const widthInput = document.getElementById('editorWidth');
+    const heightInput = document.getElementById('editorHeight');
+    const fileLabel = document.querySelector('.image-add-btn');
+    const fileInput = document.getElementById('id_images');
+
+    openBtn.addEventListener('click', function(){
+        modal.setAttribute('aria-hidden','false');
+        // init editor if not already
+        if(!window.CKEDITOR_INSTALLED){
+            CKEDITOR.replace('id_content');
+            window.CKEDITOR_INSTALLED = true;
+        }
+    });
+
+    closeBtn.addEventListener('click', function(){
+        modal.setAttribute('aria-hidden','true');
+    });
+
+    // update hidden post type
+    postType.addEventListener('change', function(){ hiddenType.value = this.value; });
+
+    // adjust editor size
+    function applySize(){
+        const w = parseInt(widthInput.value) || 600;
+        const h = parseInt(heightInput.value) || 300;
+        editorBox.style.width = w + 'px';
+        const ta = editorBox.querySelector('textarea');
+        if(ta) ta.style.minHeight = h + 'px';
+        if(window.CKEDITOR_INSTALLED){
+            for (var instance in CKEDITOR.instances) { CKEDITOR.instances[instance].resize(w-40, h); }
+        }
+    }
+    widthInput.addEventListener('change', applySize);
+    heightInput.addEventListener('change', applySize);
+
+    // image button triggers file input
+    fileLabel.addEventListener('click', function(){ fileInput.click(); });
+
+    // before submit update CKEditor textarea
+    const form = document.getElementById('createPostForm');
+    form.addEventListener('submit', function(e){
+        if(window.CKEDITOR_INSTALLED){
+            for (var instance in CKEDITOR.instances) { CKEDITOR.instances[instance].updateElement(); }
+        }
+        // allow form to submit normally to the create_post view which redirects to home
+    });
+
+    // image preview for create modal
+    const previewDiv = document.getElementById('imagePreview');
+    if(fileInput){
+        fileInput.addEventListener('change', function(){
+            previewDiv.innerHTML = '';
+            const files = Array.from(this.files).slice(0,5);
+            files.forEach(file => {
+                if(!file.type.startsWith('image/')) return;
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(file);
+                img.alt = file.name;
+                img.onload = () => URL.revokeObjectURL(img.src);
+                previewDiv.appendChild(img);
+            });
+            // Insert selected images into CKEditor as inline base64 images
+            if(window.CKEDITOR_INSTALLED){
+                const editor = CKEDITOR.instances['id_content'];
+                if(editor){
+                    files.forEach(file => {
+                        if(!file.type.startsWith('image/')) return;
+                        const reader = new FileReader();
+                        reader.onload = function(e){
+                            const dataUrl = e.target.result;
+                            try{
+                                editor.insertHtml('<p><img src="' + dataUrl + '" style="max-width:100%;height:auto;" /></p>');
+                            }catch(err){ console.error('Insert image into editor failed', err); }
+                        };
+                        reader.readAsDataURL(file);
+                    });
+                }
+            } else {
+                // If editor not initialized, initialize quickly then insert
+                CKEDITOR.replace('id_content');
+                window.CKEDITOR_INSTALLED = true;
+                const editor = CKEDITOR.instances['id_content'];
+                files.forEach(file => {
+                    if(!file.type.startsWith('image/')) return;
+                    const reader = new FileReader();
+                    reader.onload = function(e){
+                        const dataUrl = e.target.result;
+                        try{ editor.insertHtml('<p><img src="' + dataUrl + '" style="max-width:100%;height:auto;" /></p>'); }catch(err){}
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+            if(this.files.length > 5){
+                const note = document.createElement('div');
+                note.style.color = '#cc0000';
+                note.style.fontSize = '0.9em';
+                note.textContent = 'Only the first 5 images will be uploaded.';
+                previewDiv.appendChild(note);
+            }
+        });
+    }
+});
+</script>
+
+{% endblock %}

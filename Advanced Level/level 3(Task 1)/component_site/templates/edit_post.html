@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load ckeditor %}
+
+{% block content %}
+<div class="container">
+  <h2>Edit Blog Post</h2>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="form-group">
+      <label for="id_title">Title:</label>
+      <input type="text" id="id_title" name="title" value="{{ post.title }}" required>
+    </div>
+    <div class="form-group">
+      <label for="id_content">Content:</label>
+      <textarea name="content" id="id_content">{{ post.content }}</textarea>
+    </div>
+    <div class="form-group">
+      <label for="id_images">Images (you can add multiple, up to 5):</label>
+      <input type="file" id="id_images" name="images" accept="image/*" multiple>
+      <div class="existing-images">
+        {% if post.image1 %}<img src="{{ post.image1.url }}" style="max-width:120px;margin:6px;" />{% endif %}
+        {% if post.image2 %}<img src="{{ post.image2.url }}" style="max-width:120px;margin:6px;" />{% endif %}
+        {% if post.image3 %}<img src="{{ post.image3.url }}" style="max-width:120px;margin:6px;" />{% endif %}
+        {% if post.image4 %}<img src="{{ post.image4.url }}" style="max-width:120px;margin:6px;" />{% endif %}
+        {% if post.image5 %}<img src="{{ post.image5.url }}" style="max-width:120px;margin:6px;" />{% endif %}
+      </div>
+    </div>
+    <div id="editImagePreview" class="image-preview" aria-live="polite"></div>
+    <button type="submit" class="btn btn-primary">Update Post</button>
+  </form>
+</div>
+
+<script>
+  CKEDITOR.replace('id_content');
+  // preview selected images in edit page
+  (function(){
+    const editInput = document.getElementById('id_images');
+    const preview = document.getElementById('editImagePreview');
+    const existing = document.querySelector('.existing-images');
+    if(!editInput) return;
+    editInput.addEventListener('change', function(){
+      preview.innerHTML = '';
+      const files = Array.from(this.files).slice(0,5);
+      files.forEach(file => {
+        if(!file.type.startsWith('image/')) return;
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(file);
+        img.alt = file.name;
+        img.onload = () => URL.revokeObjectURL(img.src);
+        preview.appendChild(img);
+      });
+      // hide existing display when new images selected
+      if(existing) existing.style.display = files.length ? 'none' : '';
+      if(this.files.length > 5){
+        const note = document.createElement('div');
+        note.style.color = '#cc0000';
+        note.style.fontSize = '0.9em';
+        note.textContent = 'Only the first 5 images will be uploaded.';
+        preview.appendChild(note);
+      }
+      // Insert selected images into CKEditor as inline base64 images
+      if(window.CKEDITOR){
+        const editor = CKEDITOR.instances['id_content'];
+        if(editor){
+          files.forEach(file => {
+            if(!file.type.startsWith('image/')) return;
+            const reader = new FileReader();
+            reader.onload = function(e){
+              const dataUrl = e.target.result;
+              try{ editor.insertHtml('<p><img src="' + dataUrl + '" style="max-width:100%;height:auto;" /></p>'); }catch(err){ console.error(err); }
+            };
+            reader.readAsDataURL(file);
+          });
+        }
+      }
+    });
+  })();
+</script>
+{% endblock %}

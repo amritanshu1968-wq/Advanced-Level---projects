@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="description" content="A performance optimized sample PWA with lazy loading images and modern formats.">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="assets/sample.png" type="image/png">
+    <title>Performance Optimized Sample</title>
+    <!-- Critical CSS inlined -->
+    <style>
+      html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial}
+      .hero{display:flex;align-items:center;justify-content:center;height:60vh;background:#f5f7fb;color:#111}
+      .container{max-width:900px;padding:20px}
+      img{max-width:100%;height:auto;display:block}
+    </style>
+    <link rel="stylesheet" href="styles.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="styles.css"></noscript>
+  </head>
+  <body>
+    <main class="container">
+      <section class="hero">
+        <div>
+          <h1>Performance Optimized Sample</h1>
+          <p>Images use lazy loading & modern formats; scripts deferred.</p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Example image</h2>
+        <picture>
+          <source srcset="https://via.placeholder.com/1200x800.webp" type="image/webp">
+          <img src="https://via.placeholder.com/1200x800" alt="Sample" loading="lazy" width="1200" height="800">
+        </picture>
+      </section>
+
+    </main>
+
+    <script src="main.js" defer></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').catch(()=>{});
+      }
+    </script>
+  </body>
+</html>
